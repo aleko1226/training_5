@@ -1,0 +1,127 @@
+;language:R5RS
+1.
+(define (bitfunc x) (- (+ (expt x 4) (expt x 2)) 14))
+;usage like: (bitfunc 2); -> 6
+
+2.
+(define (bitfunc-rect x1 x2) (* (bitfunc x1) (- x2 x1)))
+;usage like: (bitfunc-rect 2 4); -> 12
+
+3.
+(1)
+(define (bitfunc-integral-recur num-steps x1 x2)
+  (if (= num-steps 1)
+      (bitfunc-rect x1 x2)
+      (+ (bitfunc-rect x1 ( + x1 (/ (- x2 x1) num-steps))) (bitfunc-integral-recur (- num-steps 1) ( + x1 (/ (- x2 x1) num-steps)) x2))
+      )
+  )
+;usage like: (bitfunc-integral-recur 10000 2 4) ; -> 189 129585708333333/3125000000000000
+
+(2)
+(define (bitfunc-integral-iter sum num-steps x1 x2)
+  (if (= num-steps 1) sum
+      (bitfunc-integral-iter (+ sum (bitfunc-rect x1 ( + x1 (/ (- x2 x1) num-steps)))) (- num-steps 1) ( + x1 (/ (- x2 x1) num-steps)) x2) 
+      )
+  )
+;usage like: (bitfunc-integral-iter 0 10000 2 4) ; -> 188 3093368705908412999/3125000000000000000
+;the initial value of sum must be 0.
+
+4.
+(define (integral func num-steps x1 x2)
+  (if (= num-steps 1)
+      (*(func x1) (- x2 x1))
+      (+ (* (func x1)  (/ (- x2 x1) num-steps)) (integral func (- num-steps 1) (+ x1 (/ (- x2 x1) num-steps)) x2))
+      ))
+;usage like:(define (func x) (- (+ (expt x 4) (expt x 2)) 14))
+;usage like:(integral func 10000 3 5); ->581 33337458333333/3125000000000000
+
+5.(define (approx-pi num-steps x1 x2)
+  (if (= num-steps 1)
+      (* (sqrt (- 1 (expt x1 2))) (- x2 x1))
+      (+ (* (sqrt (- 1 (expt x1 2)))  (/ (- x2 x1) num-steps)) (approx-pi (- num-steps 1) (+ x1 (/ (- x2 x1) num-steps)) x2))
+      ))
+;usage like: (* 4 (approx-pi 10000 0 1)); -> 3.141791477611328
+
+6.
+(define (rectangle func x1 x2) (* (func x1) (- x2 x1)))
+
+(define (trapezoid func x1 x2)  (/ (* (+ (func x1) (func x2)) (- x2 x1)) 2))
+
+(define (func x) (- (+ (expt x 4) (expt x 2)) 14))
+
+(define (integral-with rectangle func num-steps x1 x2)
+  (if (= num-steps 1)
+      (* (func x1) (- x2 x1))
+      (+ (* (func x1)  (/ (- x2 x1) num-steps)) (integral-with rectangle func (- num-steps 1) (+ x1 (/ (- x2 x1) num-steps)) x2))
+      ))
+;usage like: (integral-with rectangle func 10000 3 5); -> 581 33337458333333/3125000000000000
+
+(define (integral-with trapezoid func num-steps x1 x2)
+  (if (= num-steps 1)
+      (/ (* (+ (func x1) (func x2)) (- x2 x1)) 2)
+      (+ (/ (* (+ (func x1) (func (+ x1 (/ (- x2 x1) num-steps) ))) (/ (- x2 x1) num-steps)) 2) 
+         (integral-with trapezoid func (- num-steps 1) (+ x1 (/ (- x2 x1) num-steps)) x2)
+         )))
+;usage like: (integral-with trapezoid func 10000 3 5); -> 581 208337458333333/3125000000000000
+
+7.
+(define (better-pi num-steps x1 x2)
+  (if (= num-steps 1)
+      (* (+ (sqrt (- 1 (expt x1 2))) (sqrt (- 1 (expt x2 2)))) (- x2 x1) 0.5)
+      (+ (* 0.5 (+ (sqrt (- 1 (expt x1 2)))  (sqrt (- 1 (expt (+ x1 (/ (- x2 x1) num-steps)) 2)))) (/ (- x2 x1) num-steps)) 
+               (better-pi (- num-steps 1) (+ x1 (/ (- x2 x1) num-steps)) x2))
+      ))
+;usage like: (* 4 (better-pi 10000 0 1)); -> 3.141591477611335
+
+8.
+(define (deriv-variable var wrt) 
+  (if (eq? var wrt) 1
+  0))
+;usage like:(deriv-variable 'x 'x);->1
+;usage like:(deriv-variable 'y 'x);->0
+
+9.
+(define (deriv-constant constant wrt) 0)
+
+(define (derivative expr wrt)
+  (if (symbol? 'expr) (deriv-variable expr wrt)
+      (deriv-constant expr wrt)))
+;usage like:(derivative  3 'x);->0
+;usage like:(derivative  'x 'x);->1
+
+10.
+(define (deriv-sum expr wrt)
+  (list '+ (derivative (car (cdr expr)) wrt) (derivative (car (cdr (cdr expr))) wrt)))
+;usage like:(deriv-sum '(+ x 3) 'x);->(+ 1 0)
+
+11.
+(define (deriv-product expr wrt)
+  (list '+  (list '* (car (cdr expr)) (derivative (car (cdr (cdr expr))) wrt) )
+        (list '* (derivative (car (cdr expr)) wrt) (car (cdr (cdr expr))))))
+;usage like:(deriv-product '(* x 3) 'x);->(+ (* x 0) (* 1 3))
+
+12.
+(define (deriv-a^x expr wrt)
+  (list '* (list 'log (car expr))  expr))
+;usage like:(deriv-a^x '(3 ^ x) 'x); ->(* (log 3) (3 ^ x))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
